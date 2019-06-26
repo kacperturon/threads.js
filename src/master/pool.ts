@@ -1,7 +1,7 @@
 import DebugLogger from "debug"
 import Observable from "zen-observable"
 import { makeHot } from "../observable-promise"
-import Implementation from "./implementation"
+import { defaultPoolSize } from "./implementation"
 import { Thread } from "./thread"
 
 export { Thread }
@@ -216,7 +216,7 @@ function PoolConstructor<ThreadType extends Thread>(
     : optionsOrSize || {}
 
   const debug = DebugLogger(`threads:pool:${slugify(options.name || String(nextPoolID++))}`)
-  const { concurrency = 1, size = Implementation.defaultPoolSize } = options
+  const { concurrency = 1, size = defaultPoolSize } = options
 
   let isClosing = false
   let nextTaskID = 1

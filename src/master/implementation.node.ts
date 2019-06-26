@@ -10,7 +10,7 @@ declare const __non_webpack_require__: typeof require
 
 type WorkerEventName = "error" | "message"
 
-const defaultPoolSize = cpus().length
+export const defaultPoolSize = cpus().length
 
 function rebaseScriptPath(scriptPath: string, ignoreRegex: RegExp) {
   const parentCallSite = getCallsites().find((callsite: CallSite) => {
@@ -110,7 +110,7 @@ function initTinyWorker(): typeof WorkerImplementation {
   return Worker as any
 }
 
-function selectWorkerImplementation(): typeof WorkerImplementation {
+export function selectWorkerImplementation(): typeof WorkerImplementation {
   try {
     return initWorkerThreadsWorker()
   } catch(error) {
@@ -118,9 +118,4 @@ function selectWorkerImplementation(): typeof WorkerImplementation {
     console.debug("Node worker_threads not available. Trying to fall back to tiny-worker polyfill...")
     return initTinyWorker()
   }
-}
-
-export default {
-  defaultPoolSize,
-  selectWorkerImplementation
 }

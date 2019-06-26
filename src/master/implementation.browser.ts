@@ -1,12 +1,9 @@
 import { WorkerImplementation } from "../types/master"
 
-const defaultPoolSize = navigator.hardwareConcurrency || 4
+export const defaultPoolSize = typeof navigator !== "undefined" && navigator.hardwareConcurrency
+  ? navigator.hardwareConcurrency
+  : 4
 
-function selectWorkerImplementation(): typeof WorkerImplementation {
+export function selectWorkerImplementation(): typeof WorkerImplementation {
   return Worker
-}
-
-export default {
-  defaultPoolSize,
-  selectWorkerImplementation
 }
