@@ -102,7 +102,8 @@ async function runPoolTask<ThreadType extends Thread>(
   availableWorker: WorkerDescriptor<ThreadType>,
   workerID: number,
   eventSubject: ZenObservable.SubscriptionObserver<PoolEvent<ThreadType>>,
-  debug: DebugLogger.Debugger
+  debug: DebugLogger.Debugger,
+  TIMEOUT: number = 10000
 ) {
   debug(`Running task #${task.id} on worker #${workerID}...`)
   eventSubject.next({
@@ -112,8 +113,10 @@ async function runPoolTask<ThreadType extends Thread>(
   })
 
   try {
-    const returnValue = await task.run(await availableWorker.init)
-
+    const returnValue = await Promise.race([
+      task.run(await availableWorker.init),
+      sleep(TIMEOUT).then(()=>{throw new Error('Timeout!')})
+    ]);
     debug(`Task #${task.id} completed successfully`)
     eventSubject.next({
       type: PoolEventType.taskCompleted,
@@ -129,6 +132,9 @@ async function runPoolTask<ThreadType extends Thread>(
       error,
       workerID
     })
+    if(error.message === 'Timeout!'){
+      throw error;
+    }
   }
 }
 
@@ -268,10 +274,28 @@ function PoolConstructor<ThreadType extends Thread>(
       // Defer task execution by one tick to give handlers time to subscribe
       await sleep(0)
 
+      let workerCrashed = false;
       try {
         await runPoolTask(task, availableWorker, workerID, eventSubject, debug)
+      } catch (err) {
+        if (err.message === 'Timeout!') {
+          workerCrashed = true;
+        } else {
+          throw err;
+        }
       } finally {
         removeTaskFromWorkersRunningTasks()
+        if (workerCrashed) {
+          Thread.terminate(await availableWorker.init);
+          const workerIndex = workers.indexOf(availableWorker);
+          if (workerIndex === -1) {
+            throw new Error('Cannot replace thread that timed out');
+          }
+          workers[workerIndex] = {
+            init: spawnWorker(),
+            runningTasks: []
+          };
+        }
 
         if (!isClosing) {
           scheduleWork()
