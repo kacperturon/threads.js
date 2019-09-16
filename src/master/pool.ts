@@ -133,7 +133,7 @@ async function runPoolTask<ThreadType extends Thread>(
       error,
       workerID
     })
-    if(error.message === 'Timeout!'){
+    if(error.message === 'Timeout service worker'){
       throw error;
     }
   }
@@ -278,7 +278,7 @@ function PoolConstructor<ThreadType extends Thread>(
       try {
         await runPoolTask(task, availableWorker, workerID, eventSubject, debug)
       } catch (err) {
-        if (err.message === 'Timeout!') {
+        if (err.message === 'Timeout service worker') {
           workerCrashed = true;
         } else {
           throw err;
